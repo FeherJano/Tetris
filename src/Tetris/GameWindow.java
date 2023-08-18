@@ -19,10 +19,12 @@ public class GameWindow {
 
         board = new Board();
         window.add(board);
+        window.addKeyListener(board);
         window.setVisible(true);
     }
 
     public static void main(String[] args) {
+
         new GameWindow();
     }
 }

@@ -1,6 +1,7 @@
 package Tetris;
 
 import javax.swing.*;
+import javax.xml.parsers.SAXParser;
 import java.awt.Graphics;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -19,32 +20,76 @@ public class Board extends JPanel implements KeyListener {
 
     private Timer looper;
 
-    private Color[][] board = new Color[BOARD_WIDTH][BOARD_HEIGHT];
-    private Color[][] shape = {
-            {null, Color.RED, Color.RED},
-            {Color.RED, Color.RED, null}
-    };
+    private Color[][] board = new Color[BOARD_HEIGHT][BOARD_WIDTH];
 
-    private int x = 4, y = 0;
-    private int normal = 600;
-    private int fast = 50;
-    private int delayTimeForMovement = normal;
-    private long beginTime;
+
+    private Shape[] shapes = new Shape[7];
+    private Shape currentShape;
 
     public Board() {
+
+        shapes[0] = new Shape(new int[][] {
+                // S shape
+                {0, 1, 1},
+                {1, 1, 0},
+        }, this, Color.RED);
+
+        shapes[1] = new Shape(new int[][] {
+                // Z shape
+                {1, 1, 0},
+                {0, 1, 1},
+        }, this, Color.BLUE);
+
+        shapes[2] = new Shape(new int[][] {
+                // T shape
+                {1, 1, 1},
+                {0, 1, 0},
+        }, this, Color.ORANGE);
+
+        shapes[3] = new Shape(new int[][] {
+                // L shape
+                {1, 1, 1},
+                {1, 0, 0},
+        }, this, Color.GREEN);
+
+        shapes[4] = new Shape(new int[][] {
+                // J shape
+                {1, 1, 1},
+                {0, 0, 1},
+        }, this, Color.MAGENTA);
+
+        shapes[5] = new Shape(new int[][] {
+                // I shape
+                {1, 1, 1, 1},
+        }, this, Color.LIGHT_GRAY);
+
+        shapes[6] = new Shape(new int[][] {
+                // O shape
+                {1, 1},
+                {1, 1},
+        }, this, Color.WHITE);
+
+        currentShape = shapes[0];
+
         looper = new Timer(delay, new ActionListener() {
             int n = 0;
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (System.currentTimeMillis() - beginTime > delayTimeForMovement) {
-                    y++;
-                    beginTime = System.currentTimeMillis();
-                }
 
+                update();
                 repaint();
             }
         });
         looper.start();
+    }
+
+    private void update() {
+        currentShape.update();
+    }
+
+    public void setCurrentShape() {
+        currentShape = shapes[1];
+        currentShape.reset();
     }
 
     @Override
@@ -54,12 +99,13 @@ public class Board extends JPanel implements KeyListener {
         g.setColor(Color.black);
         g.fillRect(0,0,getWidth(),getHeight());
 
-        //draw shape
-        for (int row = 0; row < shape.length; row++) {
-            for (int col = 0; col < shape[0].length; col++) {
-                if (shape[row][col] != null) {
-                    g.setColor(shape[row][col]);
-                    g.fillRect(col * BLOCK_SIZE + x * BLOCK_SIZE, row * BLOCK_SIZE + y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        currentShape.render(g);
+
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[0].length; col++) {
+                if (board[row][col] != null) {
+                    g.setColor(board[row][col]);
+                    g.fillRect(col * BLOCK_SIZE, row * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE );
                 }
             }
         }
@@ -73,8 +119,10 @@ public class Board extends JPanel implements KeyListener {
         for (int col = 0; col < BOARD_WIDTH + 1; col++) {
             g.drawLine(BLOCK_SIZE * col, 0, BLOCK_SIZE * col, BLOCK_SIZE * BOARD_HEIGHT);
         }
+    }
 
-
+    public Color[][] getBoard() {
+        return board;
     }
 
     @Override
@@ -85,14 +133,20 @@ public class Board extends JPanel implements KeyListener {
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-            delayTimeForMovement = fast;
+            currentShape.speedUp();
+        }
+        if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+            currentShape.moveRight();
+        }
+        else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+            currentShape.moveLeft();
         }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-            delayTimeForMovement = normal;
+            currentShape.speedDown();
         }
     }
 }
